@@ -1,0 +1,18 @@
+{
+  "name": "dart-demo-jet",
+  "private": true,
+  "version": "0.0.1",
+  "description": "DART Demo — Oracle JET / Redwood Edition",
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js && http-server -p 8080 -c-1 -o",
+    "start": "node build.js && http-server -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "dependencies": {
+    "@oracle/oraclejet": "^16.1.0",
+    "@oracle/oraclejet-preact": "^16.1.0"
+  }
+}

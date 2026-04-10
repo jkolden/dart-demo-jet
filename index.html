@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DART Deposit Batch — Oracle JET Edition</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23c74634'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='sans-serif' font-weight='700' font-size='16' fill='white'%3ED%3C/text%3E%3C/svg%3E" />
+
+  <!-- Google Fonts (Inter as Oracle Sans proxy) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Oracle JET Redwood Theme -->
+  <link rel="stylesheet" href="https://static.oracle.com/cdn/jet/16.1.0/default/css/redwood/oj-redwood-min.css" />
+
+  <!-- App CSS (custom styles on top of Redwood) -->
+  <link rel="stylesheet" href="css/app.css" />
+
+  <!-- RequireJS -->
+  <script src="https://static.oracle.com/cdn/jet/16.1.0/3rdparty/require/require.js"></script>
+</head>
+
+<body class="oj-web-applayout-body">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PASSWORD GATE  (plain JS — no Knockout dependency)             -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="loginGate" class="dart-gate" style="display:none">
+  <form id="loginForm" class="dart-gate-card">
+    <div class="dart-gate-logo">Oracle Cloud</div>
+    <h1 class="dart-gate-title">DART Demo</h1>
+    <p class="dart-gate-subtitle">County of San Diego</p>
+    <p class="dart-gate-subtitle dart-gate-jet-badge">Built with Oracle JET</p>
+    <input id="pwInput" class="dart-gate-input" type="password"
+           placeholder="Enter demo password" autofocus />
+    <span id="pwError" class="dart-gate-error" style="display:none">Incorrect password</span>
+    <button class="dart-gate-btn" type="submit">Enter</button>
+  </form>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- LOADING INDICATOR (shown while JET boots after login)          -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="jetLoading" style="display:none;min-height:100vh;display:none;align-items:center;justify-content:center;background:#f1efed;font-family:Inter,sans-serif;color:#697778">
+  <p>Loading Oracle JET components&hellip;</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MAIN APPLICATION (Knockout-bound after JET boots)              -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="mainApp" style="display:none">
+
+  <div class="dart-shell">
+
+    <!-- ── Page Banner ──────────────────────────────────────────── -->
+    <header class="dart-banner">
+      <div class="dart-banner-left">
+        <h1 class="dart-banner-title" data-bind="text: displayBatchNum"></h1>
+        <div class="dart-banner-meta">
+          <span data-bind="text: batchStatus, css: bannerBadgeClass"></span>
+          <span data-bind="text: preparerName"></span>
+          <span data-bind="text: createdDate"></span>
+        </div>
+      </div>
+      <div class="dart-banner-right">
+        <div class="dart-banner-actions">
+          <!-- ko if: locked -->
+          <button class="dart-btn-banner dart-btn-text" data-bind="click: handleUnlock">Unlock</button>
+          <!-- /ko -->
+          <button class="dart-btn-banner dart-btn-text" data-bind="click: handleCancel, disable: locked">Cancel</button>
+          <button class="dart-btn-banner dart-btn-outlined" data-bind="click: handleSave, disable: locked">
+            <!-- ko if: locked -->Locked<!-- /ko -->
+            <!-- ko ifnot: locked -->Save &amp; Lock<!-- /ko -->
+          </button>
+        </div>
+        <span class="dart-banner-updated" data-bind="text: lastUpdated"></span>
+      </div>
+    </header>
+
+    <!-- ── Toast notification ── -->
+    <!-- ko if: showLockToast -->
+    <div class="dart-toast">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      Batch saved and record locked. This bank deposit cannot be selected by another preparer.
+    </div>
+    <!-- /ko -->
+
+    <!-- ── HOFI mismatch warning ── -->
+    <!-- ko if: hofiMismatch() && !locked() -->
+    <div class="dart-warning-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span data-bind="text: hofiMismatchText"></span>
+    </div>
+    <!-- /ko -->
+
+    <!-- ── Content surface ── -->
+    <div class="dart-content">
+
+      <!-- ════════════════════════════════════════════════════════ -->
+      <!-- BATCH INFORMATION                                       -->
+      <!-- ════════════════════════════════════════════════════════ -->
+      <div>
+        <h2 class="dart-section-title">Batch information</h2>
+        <oj-form-layout max-columns="3" direction="row" label-edge="top">
+          <oj-select-single id="batchCategory"
+                            label-hint="Batch Category"
+                            data="[[batchCategoriesDP]]"
+                            value="{{batchCategory}}"
+                            item-text="label"
+                            disabled="[[locked]]">
+          </oj-select-single>
+
+          <oj-select-single id="batchType"
+                            label-hint="Batch Type"
+                            data="[[batchTypesDP]]"
+                            value="{{batchType}}"
+                            item-text="label"
+                            disabled="[[locked]]">
+          </oj-select-single>
+
+          <oj-select-single id="batchStatus"
+                            label-hint="Batch Status"
+                            data="[[batchStatusesDP]]"
+                            value="{{batchStatus}}"
+                            item-text="label"
+                            disabled="[[locked]]">
+          </oj-select-single>
+
+          <oj-input-text id="batchName"
+                         label-hint="Batch Name"
+                         value="{{batchName}}"
+                         readonly="[[locked]]"
+                         column-span="2">
+          </oj-input-text>
+
+          <oj-select-single id="workflowStatus"
+                            label-hint="Workflow Status"
+                            data="[[workflowStatesDP]]"
+                            value="{{workflowStatus}}"
+                            item-text="label"
+                            disabled="[[locked]]">
+          </oj-select-single>
+
+          <oj-select-single id="preparerOrg"
+                            label-hint="Preparer Organization"
+                            data="[[organizationsDP]]"
+                            value="{{preparerOrganization}}"
+                            item-text="label"
+                            disabled="[[locked]]">
+          </oj-select-single>
+
+          <oj-select-single id="preparerName"
+                            label-hint="Preparer Name"
+                            data="[[preparersDP]]"
+                            value="{{preparerName}}"
+                            item-text="label"
+                            disabled="[[locked]]">
+          </oj-select-single>
+
+          <oj-input-text id="preparerHOFI"
+                         label-hint="Preparer HOFI"
+                         value="{{preparerHOFI}}"
+                         readonly="[[locked]]"
+                         class="dart-hofi-input">
+          </oj-input-text>
+        </oj-form-layout>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════ -->
+      <!-- BANK DEPOSIT CONTEXT + CHART                            -->
+      <!-- ════════════════════════════════════════════════════════ -->
+      <div class="dart-two-col">
+
+        <!-- Bank deposit form -->
+        <div>
+          <h2 class="dart-section-title">Bank deposit context</h2>
+          <oj-form-layout max-columns="2" direction="row" label-edge="top">
+            <oj-select-single id="bankName"
+                              label-hint="Bank Name"
+                              data="[[banksDP]]"
+                              value="{{bankName}}"
+                              item-text="label"
+                              disabled="[[locked]]"
+                              column-span="2">
+            </oj-select-single>
+
+            <oj-input-text id="bankAccount"
+                           label-hint="Bank Account"
+                           value="[[bankAccount]]"
+                           readonly="true">
+            </oj-input-text>
+
+            <oj-input-date id="bankDate"
+                           label-hint="Bank Date"
+                           value="{{bankDate}}"
+                           readonly="[[locked]]">
+            </oj-input-date>
+
+            <oj-input-text id="bankReference"
+                           label-hint="Bank Reference"
+                           value="{{bankReference}}"
+                           readonly="[[locked]]">
+            </oj-input-text>
+
+            <oj-input-text id="bankAmount"
+                           label-hint="Bank Amount"
+                           value="[[bankAmountFormatted]]"
+                           readonly="true"
+                           class="dart-amount-input">
+            </oj-input-text>
+          </oj-form-layout>
+          <!-- ko if: showBankHint -->
+          <p class="dart-hint" data-bind="text: bankHintText"></p>
+          <!-- /ko -->
+        </div>
+
+        <!-- Distribution chart -->
+        <div>
+          <h2 class="dart-section-title">Deposit distribution</h2>
+          <div class="dart-chart-layout">
+            <svg viewBox="0 0 100 100" class="dart-donut">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#e6e2de" stroke-width="12"/>
+              <!-- ko foreach: donutArcs -->
+              <circle cx="50" cy="50" r="40" fill="none"
+                      data-bind="attr: { stroke: color, 'stroke-dasharray': dashArray, 'stroke-dashoffset': dashOffset }"
+                      stroke-width="12" stroke-linecap="butt"
+                      transform="rotate(-90 50 50)"
+                      class="dart-donut-arc"/>
+              <!-- /ko -->
+              <text x="50" y="47" text-anchor="middle" class="dart-donut-label">Total</text>
+              <text x="50" y="57" text-anchor="middle" class="dart-donut-value" data-bind="text: chartTotalFormatted"></text>
+            </svg>
+            <div class="dart-chart-legend">
+              <!-- ko foreach: chartSegments -->
+              <div class="dart-legend-item">
+                <span class="dart-legend-swatch" data-bind="style: { background: color }"></span>
+                <div class="dart-legend-detail">
+                  <span class="dart-legend-label" data-bind="text: label"></span>
+                  <span class="dart-legend-value" data-bind="text: valueFormatted"></span>
+                  <span class="dart-legend-pct" data-bind="text: pctFormatted"></span>
+                </div>
+              </div>
+              <!-- /ko -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════ -->
+      <!-- DISTRIBUTION LINES (Tabs + Tables)                      -->
+      <!-- ════════════════════════════════════════════════════════ -->
+      <div>
+        <h2 class="dart-section-title">Distribution lines</h2>
+
+        <oj-tab-bar data="[[tabsDP]]" selection="{{selectedTab}}" edge="top">
+          <template slot="itemTemplate" data-oj-as="item">
+            <span>
+              <oj-bind-text value="[[item.data.label]]"></oj-bind-text>
+            </span>
+          </template>
+        </oj-tab-bar>
+
+        <!-- GL Lines Table -->
+        <!-- ko if: isTab('gl') -->
+        <div class="dart-table-wrap">
+          <table class="dart-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Fund</th><th>Budget Ref</th><th>Dept</th>
+                <th>Account</th><th>Program</th><th>Funding Src</th>
+                <th>Project</th><th class="dart-num">Amount</th><th>Description</th>
+              </tr>
+            </thead>
+            <tbody data-bind="foreach: glLines">
+              <tr>
+                <td data-bind="text: id"></td>
+                <td data-bind="text: fund"></td>
+                <td data-bind="text: budgetRef"></td>
+                <td data-bind="text: dept"></td>
+                <td data-bind="text: account"></td>
+                <td data-bind="text: program"></td>
+                <td data-bind="text: fundingSrc"></td>
+                <td data-bind="text: project"></td>
+                <td class="dart-num" data-bind="text: amountFmt"></td>
+                <td data-bind="text: description"></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="8" class="dart-foot-label">Total</td>
+                <td class="dart-num" data-bind="text: $root.glTotalFmt"></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <!-- /ko -->
+
+        <!-- PNG Lines Table -->
+        <!-- ko if: isTab('png') -->
+        <div class="dart-table-wrap">
+          <table class="dart-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Project</th><th>Task</th><th>Exp Type</th>
+                <th>Exp Org</th><th>Contract</th><th>Funding Source</th>
+                <th class="dart-num">Amount</th><th>Description</th>
+              </tr>
+            </thead>
+            <tbody data-bind="foreach: pngLines">
+              <tr>
+                <td data-bind="text: id"></td>
+                <td data-bind="text: project"></td>
+                <td data-bind="text: task"></td>
+                <td data-bind="text: expenditureType"></td>
+                <td data-bind="text: expenditureOrg"></td>
+                <td data-bind="text: contract"></td>
+                <td data-bind="text: fundingSource"></td>
+                <td class="dart-num" data-bind="text: amountFmt"></td>
+                <td data-bind="text: description"></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="7" class="dart-foot-label">Total</td>
+                <td class="dart-num" data-bind="text: $root.pngTotalFmt"></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <!-- /ko -->
+
+        <!-- AR Receipt Lines Table -->
+        <!-- ko if: isTab('ar') -->
+        <div class="dart-table-wrap">
+          <table class="dart-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Receipt Number</th><th>Customer</th>
+                <th class="dart-num">Amount</th><th>Receipt Date</th>
+                <th>Status</th><th>DART Batch</th>
+              </tr>
+            </thead>
+            <tbody data-bind="foreach: arLines">
+              <tr>
+                <td data-bind="text: id"></td>
+                <td data-bind="text: receiptNumber"></td>
+                <td data-bind="text: customer"></td>
+                <td class="dart-num" data-bind="text: amountFmt"></td>
+                <td data-bind="text: receiptDate"></td>
+                <td>
+                  <span data-bind="text: status,
+                    css: { 'applied': status === 'Applied', 'unapplied': status === 'Unapplied' }"
+                    class="dart-status-tag"></span>
+                </td>
+                <td data-bind="text: dartBatch"></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" class="dart-foot-label">Total Receipts</td>
+                <td class="dart-num" data-bind="text: $root.arTotalFmt"></td>
+                <td colspan="3"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <!-- /ko -->
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════ -->
+      <!-- BOTTOM NAV BAR                                          -->
+      <!-- ════════════════════════════════════════════════════════ -->
+      <nav class="dart-bottom-nav">
+        <span class="dart-bottom-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+          Home
+        </span>
+        <span class="dart-bottom-nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          DART
+        </span>
+        <span class="dart-bottom-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          Batches
+        </span>
+        <span class="dart-bottom-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Reports
+        </span>
+        <span class="dart-bottom-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Analytics
+        </span>
+      </nav>
+
+    </div><!-- /dart-content -->
+  </div><!-- /dart-shell -->
+
+</div><!-- /mainApp -->
+
+<!-- ═══ Application Bootstrap ═════════════════════════════════════ -->
+<script>
+(function () {
+  var DEMO_PASS = 'dart2026';
+  var loginGate  = document.getElementById('loginGate');
+  var mainApp    = document.getElementById('mainApp');
+  var jetLoading = document.getElementById('jetLoading');
+
+  /* ── Vanilla-JS login (zero framework dependency) ── */
+  function showLogin() {
+    loginGate.style.display = '';
+    mainApp.style.display   = 'none';
+    jetLoading.style.display = 'none';
+    var inp = document.getElementById('pwInput');
+    if (inp) inp.focus();
+  }
+
+  function showApp() {
+    loginGate.style.display  = 'none';
+    jetLoading.style.display = 'flex';
+    bootJET();
+  }
+
+  if (sessionStorage.getItem('dart-auth') === '1') {
+    showApp();
+  } else {
+    showLogin();
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var inp   = document.getElementById('pwInput');
+    var errEl = document.getElementById('pwError');
+    if (inp.value === DEMO_PASS) {
+      sessionStorage.setItem('dart-auth', '1');
+      showApp();
+    } else {
+      errEl.style.display = '';
+      inp.value = '';
+      inp.focus();
+      inp.addEventListener('input', function onInput() {
+        errEl.style.display = 'none';
+        inp.removeEventListener('input', onInput);
+      });
+    }
+  });
+
+  /* ── Boot Oracle JET (only after auth) ── */
+  function bootJET() {
+    var jetCdn  = 'https://static.oracle.com/cdn/jet/16.1.0';
+    var jetVendor = '../vendor/oraclejet';
+
+    requirejs.config({
+      baseUrl: 'js',
+      paths: {
+        /* 3rd-party from reliable CDNs */
+        'knockout':        'https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.1/knockout-latest.min',
+        'jquery':          'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min',
+        'hammerjs':        'https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min',
+        'signals':         'https://cdnjs.cloudflare.com/ajax/libs/js-signals/1.0.0/js-signals.min',
+        'text':            'https://cdnjs.cloudflare.com/ajax/libs/require-text/2.0.12/text.min',
+        'proj4':           'https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4',
+
+        /* Preact from Oracle CDN (known working paths) */
+        'preact':          jetCdn + '/3rdparty/preact/dist/preact.umd',
+        'preact/hooks':    jetCdn + '/3rdparty/preact/hooks/dist/hooks.umd',
+        'preact/compat':       jetCdn + '/3rdparty/preact/compat/dist/compat.umd',
+        'preact/jsx-runtime':  jetCdn + '/3rdparty/preact/jsx-runtime/dist/jsxRuntime.umd',
+
+        /* JET core + bundled libs (vendor/ built from node_modules) */
+        '@oracle/oraclejet-preact': '../vendor/oraclejet-preact',
+        'ojs':             jetVendor + '/oj/min',
+        'ojL10n':          jetVendor + '/oj/ojL10n',
+        'ojtranslations':  jetVendor + '/oj/resources',
+        'jqueryui-amd':    jetVendor + '/jquery/jqueryui-amd-1.13.2.min',
+        'ojdnd':           jetVendor + '/dnd-polyfill/dnd-polyfill-1.0.2.min',
+        'touchr':          jetVendor + '/touchr/touchr',
+        'css':             jetVendor + '/require-css/css.min',
+        'css-builder':     jetVendor + '/require-css/css-builder',
+        'normalize':       jetVendor + '/require-css/normalize'
+      }
+    });
+
+    requirejs.onError = function (err) {
+      console.error('[JET] RequireJS load error:', err);
+      jetLoading.innerHTML = '<p style="color:#c74634;text-align:center;padding:40px">' +
+        'Failed to load Oracle JET components.<br>Check the browser console (F12) for details.<br><br>' +
+        '<code style="font-size:11px;color:#697778">' + (err.requireModules ? err.requireModules.join(', ') : err.message) + '</code></p>';
+    };
+
+    require([
+      'ojs/ojbootstrap',
+      'knockout',
+      'appController',
+      'ojs/ojknockout',
+      'ojs/ojinputtext',
+      'ojs/ojselectsingle',
+      'ojs/ojdatetimepicker',
+      'ojs/ojnavigationlist',
+      'ojs/ojbutton',
+      'ojs/ojformlayout'
+    ], function (Bootstrap, ko, AppController) {
+      Bootstrap.whenDocumentReady().then(function () {
+        jetLoading.style.display = 'none';
+        mainApp.style.display    = '';
+        ko.applyBindings(new AppController(), mainApp);
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>

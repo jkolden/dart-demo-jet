@@ -1,0 +1,503 @@
+/* ═══════════════════════════════════════════════════════════════════
+   DART Demo — Oracle JET / Redwood Edition
+   Custom styles layered on top of JET Redwood theme (oj-redwood)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Design tokens (matching Redwood brand) ── */
+:root {
+  --dart-bg:            #f1efed;
+  --dart-surface:       #ffffff;
+  --dart-border:        #e6e2de;
+  --dart-border-light:  #d5d0cb;
+  --dart-text:          #201e1c;
+  --dart-text-secondary:#697778;
+  --dart-text-muted:    #9a9590;
+  --dart-brand:         #c74634;
+  --dart-brand-hover:   #b03d2e;
+  --dart-brand-dark:    #1a1917;
+  --dart-brand-light:   #fef0ee;
+  --dart-brand-yellow:  #f1b13f;
+  --dart-teal:          #0d7c66;
+  --dart-green:         #1a7c37;
+  --dart-blue:          #0572ce;
+  --dart-shadow-sm:     0 1px 2px rgba(0,0,0,0.04);
+  --dart-shadow-md:     0 2px 8px rgba(0,0,0,0.06);
+  --dart-radius:        6px;
+  --dart-radius-sm:     3px;
+  --dart-font: 'Inter', 'Oracle Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+html, body { margin: 0; min-height: 100vh; }
+body {
+  background: var(--dart-bg);
+  font-family: var(--dart-font);
+  font-size: 14px;
+  color: var(--dart-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══ PASSWORD GATE ════════════════════════════════════════════════ */
+.dart-gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dart-brand-dark);
+}
+.dart-gate-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: var(--dart-surface);
+  padding: 40px 48px;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  min-width: 340px;
+}
+.dart-gate-logo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dart-brand);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.dart-gate-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dart-text);
+}
+.dart-gate-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dart-text-muted);
+}
+.dart-gate-jet-badge {
+  margin-top: -4px;
+  padding: 2px 10px;
+  background: var(--dart-brand-light);
+  color: var(--dart-brand);
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 11px;
+}
+.dart-gate-input {
+  width: 100%;
+  height: 38px;
+  border: none;
+  border-bottom: 2px solid var(--dart-border-light);
+  border-radius: 0;
+  padding: 0 4px;
+  font-size: 14px;
+  color: var(--dart-text);
+  background: transparent;
+  outline: none;
+  text-align: center;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+.dart-gate-input:focus {
+  border-bottom-color: var(--dart-brand);
+}
+.dart-gate-error {
+  font-size: 12px;
+  color: var(--dart-brand);
+  font-weight: 600;
+}
+.dart-gate-btn {
+  width: 100%;
+  height: 36px;
+  margin-top: 4px;
+  border: none;
+  border-radius: var(--dart-radius-sm);
+  background: var(--dart-brand);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.dart-gate-btn:hover { background: var(--dart-brand-hover); }
+
+/* ═══ SHELL ═══════════════════════════════════════════════════════ */
+.dart-shell {
+  min-height: 100vh;
+  background: var(--dart-bg);
+}
+
+/* ═══ PAGE BANNER ═════════════════════════════════════════════════ */
+.dart-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 38px 28px;
+  background: #37677d;
+  color: #ffffff;
+}
+.dart-banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dart-banner-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.3;
+}
+.dart-banner-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+}
+.dart-banner-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.dart-banner-badge.incomplete { background: #22373c; }
+.dart-banner-badge.complete {
+  background: rgba(26,124,55,0.25);
+  color: #a8e6b8;
+  border: 1px solid rgba(26,124,55,0.4);
+}
+.dart-banner-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.dart-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dart-banner-updated {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+}
+/* Banner buttons — override JET button styles for white-on-teal */
+.dart-banner .dart-btn-banner {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: var(--dart-radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+.dart-btn-text {
+  background: transparent;
+  color: #ffffff;
+  border: 1px solid transparent !important;
+}
+.dart-btn-text:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+.dart-btn-text:disabled { opacity: 0.4; cursor: not-allowed; }
+.dart-btn-outlined {
+  background: #ffffff;
+  color: var(--dart-text);
+  border: 1px solid #ffffff !important;
+}
+.dart-btn-outlined:hover:not(:disabled) { background: #f1efed; }
+.dart-btn-outlined:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ═══ TOAST ═══════════════════════════════════════════════════════ */
+.dart-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 28px 0;
+  padding: 10px 16px;
+  background: #edf7ed;
+  color: var(--dart-green);
+  border-left: 3px solid var(--dart-green);
+  border-radius: 0 var(--dart-radius-sm) var(--dart-radius-sm) 0;
+  font-size: 13px;
+  font-weight: 500;
+  animation: dart-slide-in 0.25s ease;
+}
+.dart-toast svg { width: 18px; height: 18px; flex-shrink: 0; }
+@keyframes dart-slide-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ WARNING BAR ══════════════════════════════════════════════════ */
+.dart-warning-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 28px 0;
+  padding: 10px 16px;
+  background: #fdf6e9;
+  color: #b7791f;
+  border-left: 3px solid var(--dart-brand-yellow);
+  border-radius: 0 var(--dart-radius-sm) var(--dart-radius-sm) 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+.dart-warning-bar svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* ═══ CONTENT AREA ════════════════════════════════════════════════ */
+.dart-content {
+  max-width: 1100px;
+  margin: -8px auto 0;
+  padding: 32px 48px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  background: var(--dart-surface);
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  min-height: calc(100vh - 200px);
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Section titles ── */
+.dart-section-title {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dart-text);
+}
+
+/* ═══ TWO-COLUMN LAYOUT ═══════════════════════════════════════════ */
+.dart-two-col {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 28px;
+}
+
+/* ═══ FORM LAYOUT OVERRIDES ═══════════════════════════════════════ */
+/* Make JET form-layout labels match Redwood Fusion style */
+oj-form-layout {
+  --oj-form-layout-direction: row;
+}
+
+/* HOFI input — bold red uppercase */
+.dart-hofi-input .oj-text-field-input {
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--dart-brand) !important;
+}
+
+/* Amount input — tabular nums, bold */
+.dart-amount-input .oj-text-field-input {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600 !important;
+}
+
+/* Hint text */
+.dart-hint {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: var(--dart-text-muted);
+  font-style: italic;
+}
+
+/* ═══ DONUT CHART ═════════════════════════════════════════════════ */
+.dart-chart-layout {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.dart-donut {
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
+}
+.dart-donut-arc {
+  transition: stroke-dasharray 0.4s ease, stroke-dashoffset 0.4s ease;
+}
+.dart-donut-label {
+  font-size: 8px;
+  fill: var(--dart-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.dart-donut-value {
+  font-size: 8px;
+  fill: var(--dart-text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.dart-chart-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+.dart-legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.dart-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.dart-legend-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.dart-legend-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dart-text);
+}
+.dart-legend-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dart-text);
+  font-variant-numeric: tabular-nums;
+}
+.dart-legend-pct {
+  font-size: 10px;
+  color: var(--dart-text-muted);
+}
+
+/* ═══ TAB BAR OVERRIDES ═══════════════════════════════════════════ */
+oj-tab-bar {
+  border-bottom: 1px solid var(--dart-border);
+}
+
+/* ═══ DATA TABLES ═════════════════════════════════════════════════ */
+.dart-table-wrap {
+  overflow-x: auto;
+}
+.dart-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.dart-table thead {
+  border-bottom: 1px solid var(--dart-border);
+}
+.dart-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dart-text-secondary);
+  padding: 10px 8px;
+  white-space: nowrap;
+}
+.dart-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f1efed;
+  color: var(--dart-text);
+  vertical-align: middle;
+  line-height: 1.4;
+}
+.dart-table tbody tr:nth-child(even) { background: #faf9f8; }
+.dart-table tbody tr:hover { background: #f6f4f2; }
+.dart-table tfoot td {
+  font-weight: 700;
+  padding: 12px 8px;
+  background: #f6f4f2;
+  border-top: 1px solid var(--dart-border);
+  border-bottom: none;
+  font-size: 13px;
+}
+.dart-table td:last-child {
+  color: var(--dart-text-secondary);
+  font-size: 12px;
+}
+.dart-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.dart-foot-label {
+  text-align: right;
+}
+
+/* ── Status tags ── */
+.dart-status-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.dart-status-tag.applied {
+  background: var(--dart-teal);
+  color: #ffffff;
+}
+.dart-status-tag.unapplied {
+  background: var(--dart-brand-yellow);
+  color: #ffffff;
+}
+
+/* ═══ BOTTOM NAV BAR ══════════════════════════════════════════════ */
+.dart-bottom-nav {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #f0eeef;
+  border-top: 1px solid var(--dart-border);
+  margin: auto -48px -48px;
+  padding: 0 16px;
+  position: sticky;
+  bottom: 0;
+  z-index: 90;
+}
+.dart-bottom-nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dart-text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s, background 0.15s;
+}
+.dart-bottom-nav-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.dart-bottom-nav-item:hover {
+  color: var(--dart-text);
+  background: #f6f4f2;
+}
+.dart-bottom-nav-item.active {
+  color: var(--dart-teal);
+}
+.dart-bottom-nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--dart-teal);
+}
+
+/* ═══ RESPONSIVE ══════════════════════════════════════════════════ */
+@media (max-width: 960px) {
+  .dart-two-col { grid-template-columns: 1fr; }
+  .dart-banner { flex-direction: column; gap: 12px; align-items: flex-start; }
+}
+@media (max-width: 640px) {
+  .dart-content { padding: 24px 20px 48px; }
+  .dart-banner-actions { width: 100%; justify-content: flex-end; }
+  .dart-bottom-nav { flex-wrap: wrap; margin: auto -20px -48px; }
+}
